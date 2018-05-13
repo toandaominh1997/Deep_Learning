@@ -18,5 +18,59 @@ why does such an algorithm work? Lấy ví dụ a 2-layer DBN with hidden layers
 
 
 # Implementation
-Để thực hiện DBNs trong Theano, chúng ta sẽ thực hiện lớp được địng nghĩa trong hướng dẫn ![Restricted Boltzmann Machines (RBM)](http://deeplearning.net/tutorial/rbm.html)
+Để thực hiện DBNs trong Theano, chúng ta sẽ thực hiện lớp được địng nghĩa trong hướng dẫn ![Restricted Boltzmann Machines (RBM)](http://deeplearning.net/tutorial/rbm.html). Ta có thể quan sát rằng code cho DBN rất giống với code cho Sda, bời vì cả hai đều liên quan đến nguyên tắc đào tạo không giám sát không ngoan theo sau bởi tinh chỉnh được giám sát dưới dạng MLP sâu. Sự khác biệt chính là chúng tôi sử dụng lớp RBM thay vì Da.</br>
+Chúng ta bắt đầu bằng cách định nghĩa lớp DBN sẽ lưu trữ lớp của MLP, cùng với các RBM liên quan của chúng. Vì chúng tôi lấy quan điểm sử dụng RBM để khởi tạo MLP, code sẽ phản ánh điều này bằng cách phân tách càng nhiều càng tốt các RBM được sử dụng để khởi tạo mạng  và MLP được sử dụng để phân loại.</br>
+``` py
+class DBN(object):
+    """Deep Belief Network
+
+    A deep belief network is obtained by stacking several RBMs on top of each
+    other. The hidden layer of the RBM at layer `i` becomes the input of the
+    RBM at layer `i+1`. The first layer RBM gets as input the input of the
+    network, and the hidden layer of the last RBM represents the output. When
+    used for classification, the DBN is treated as a MLP, by adding a logistic
+    regression layer on top.
+    """
+
+    def __init__(self, numpy_rng, theano_rng=None, n_ins=784,
+                 hidden_layers_sizes=[500, 500], n_outs=10):
+        """This class is made to support a variable number of layers.
+
+        :type numpy_rng: numpy.random.RandomState
+        :param numpy_rng: numpy random number generator used to draw initial
+                    weights
+
+        :type theano_rng: theano.tensor.shared_randomstreams.RandomStreams
+        :param theano_rng: Theano random generator; if None is given one is
+                           generated based on a seed drawn from `rng`
+
+        :type n_ins: int
+        :param n_ins: dimension of the input to the DBN
+
+        :type hidden_layers_sizes: list of ints
+        :param hidden_layers_sizes: intermediate layers size, must contain
+                               at least one value
+
+        :type n_outs: int
+        :param n_outs: dimension of the output of the network
+        """
+
+        self.sigmoid_layers = []
+        self.rbm_layers = []
+        self.params = []
+        self.n_layers = len(hidden_layers_sizes)
+
+        assert self.n_layers > 0
+
+        if not theano_rng:
+            theano_rng = MRG_RandomStreams(numpy_rng.randint(2 ** 30))
+
+        # allocate symbolic variables for the data
+
+        # the data is presented as rasterized images
+        self.x = T.matrix('x')
+
+        # the labels are presented as 1D vector of [int] labels
+        self.y = T.ivector('y')
+```
 
